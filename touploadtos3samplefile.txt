@@ -1,0 +1,2 @@
+This file is to be manually uploaded to s3 bucket
+and then to be download to the newly created ec2 instance as part of user-data testing and practice.

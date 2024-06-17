@@ -3,6 +3,7 @@ resource "aws_instance" "web" {
   instance_type = "t2.micro"
   # Attach the security group defined below to the ec2 instace
   vpc_security_group_ids = [aws_security_group.TF_SG.id]
+  iam_instance_profile = "${aws_iam_instance_profile.instance_profile.name}"
   #count = 2
   tags = {
     Name = "HelloWorld"
@@ -13,7 +14,6 @@ resource "aws_instance" "web" {
 }
 
 # Create Security Group using Terraform
-
 resource "aws_security_group" "TF_SG" {
   name        = "Security Group using Terraform"
   description = "Security Group using Terraform"
@@ -82,4 +82,43 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv6" {
   security_group_id = aws_security_group.TF_SG.id
   cidr_ipv6         = "::/0"
   ip_protocol       = "-1" # semantically equivalent to all ports
+}
+
+# Creating of role to read from s3 bucket
+data aws_iam_policy_document "ec2_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+data aws_iam_policy_document "s3_read_access" {
+  statement {
+    actions = ["s3:Get*", "s3:List*"]
+
+    resources = ["arn:aws:s3:::*"]
+  }
+}
+
+resource "aws_iam_role" "ec2_iam_role" {
+  name = "ec2_iam_role"
+
+  assume_role_policy = "${data.aws_iam_policy_document.ec2_assume_role.json}"
+}
+
+resource "aws_iam_role_policy" "join_policy" {
+  depends_on = ["aws_iam_role.ec2_iam_role"]
+  name       = "join_policy"
+  role       = "${aws_iam_role.ec2_iam_role.name}"
+
+  policy = "${data.aws_iam_policy_document.s3_read_access.json}"
+}
+
+resource "aws_iam_instance_profile" "instance_profile" {
+  name = "instance_profile"
+  role = "${aws_iam_role.ec2_iam_role.name}"
 }
