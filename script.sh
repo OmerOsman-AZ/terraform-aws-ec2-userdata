@@ -22,4 +22,19 @@ pip3 install awscli --upgrade --user
 aws --version
 
 # copy sample file from s3 bucket to the directory created above
+echo -e "\n copy sample file from s3 bucket"
 sudo /usr/bin/aws s3 cp s3://filestobecopiedtoec2instance/touploadtos3samplefile.txt /opt/copiedfiles/
+
+
+
+# update the text file
+if [[ -f "/opt/copiedfiles/touploadtos3samplefile.txt" ]]; then
+    # create a backup of original file "touploadtos3samplefile.txt" before making changes
+    echo -e "\n creating a backup of the original file"
+    sudo cp /opt/copiedfiles/touploadtos3samplefile.txt /opt/copiedfiles/touploadtos3samplefilebackup.txt
+    echo -e "\n updating the touploadtos3samplefile file and create anther backup to test .bak option"
+	sed -i.bak 's/testing/validating/g' /opt/copiedfiles/touploadtos3samplefile.txt
+fi
+
+
+
